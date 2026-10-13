@@ -28,4 +28,13 @@ final class HomeController {
         HTML;
         return new Response($html, Response::HTTP_OK);
     }
+
+    #[Route('/health', name: 'app_health', methods: ['GET'])] 
+    public function health(): Response {
+        return new Response(
+            'Issueflow OK',
+         Response::HTTP_OK,
+         ['content-Type' => 'text/plain']
+        );
+    }
 }
