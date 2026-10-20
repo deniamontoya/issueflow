@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Model;
 
+use InvalidArgumentException;
+
 /*
 Ticket representa una incidencia en IssueFloew como
 un objeto PHP
@@ -19,7 +21,28 @@ final class Ticket
         private TicketPriority $priority,
         private TicketStatus $status
     )
-    {}
+    {
+        /*  Validar el formato de id: INC- seguido de cuatro dígitos
+            Para ello usamos una regex: regular expression (expresión regular): '/^INC-\d{4}$/'
+            La función preg_match() compara una cadena de texto con la regex y devuelve 1
+            si la cadena de texto es válida
+        */
+            if(preg_match('/^INC-\d{4}$/', $this->id) !== 1) {
+            throw new InvalidArgumentException('El id no tiene un formato válido');
+        }
+
+        /* Normalizacion de title: Eliminar espacios en blanco antes y despues
+        la funcion trim() elimina estos espacios
+        */
+        $normalizedTitle = trim($title);
+
+        /*  verifico quev$normalizedTitle no sea una cadena de texto vacia */
+        if ($normalizedTitle === '') {
+            throw new \InvalidArgumentException('El título no puede estar vacío');
+    }
+             
+    $this->title = $normalizedTitle;
+    }
 
     /* Creamos los getters para cada uno de los atributos */
     public function getId(): string
@@ -75,7 +98,7 @@ final class Ticket
             ),
             new Ticket(
                 id: 'INC-1005',
-                title: 'no me deja cambiar la contraseña',
+                title: 'Olvide mi contraseña',
                 priority: TicketPriority::Low,
                 status: TicketStatus::Open
             ),

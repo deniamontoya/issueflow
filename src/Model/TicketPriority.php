@@ -16,4 +16,19 @@ enum TicketPriority: string
     case High = 'high';
     case Normal = 'normal';
     case Low = 'low';
+
+    /* un enum tambien puede tener metodos,
+     implementados el metodo getLabe() para
+     asignar especificamente el texto que se quiere mostyrar al usuario
+     */
+    public function getLabel(): string
+    {
+        return match($this) {
+            self::Urgent => 'Urgente',
+            self::High => 'Alta',
+            self::Normal => 'Normal',
+            self::Low => 'Baja',
+        };
+      
+    }
 }
