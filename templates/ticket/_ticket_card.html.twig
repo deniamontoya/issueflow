@@ -8,7 +8,7 @@ es un parcial y no una pagina completa.
         <p class="ticket-id">{{ ticket.id }}</p>
         <h2>{{ ticket.title }}</h2>
         <p>Prioridad: <strong>{{ ticket.priority.getLabel() }}</strong></p>
-        <p>Estado: <strong>{{ ticket.status.value }}</strong></p>
+        <p>Estado: <strong>{{ ticket.status.getLabel() }}</strong></p>
         {# Agregamos un enlace a la vista particular de este ticket #}
         <a href="{{ path('app_ticket_show', { id: ticket.id }) }}">Ver detalle</a>
          </div>

@@ -17,7 +17,7 @@ enum TicketPriority: string
     case Normal = 'normal';
     case Low = 'low';
 
-    /* un enum tambien puede tener metodos,
+    /* un enum tambien puede tener metodos.
      implementados el metodo getLabe() para
      asignar especificamente el texto que se quiere mostyrar al usuario
      */
