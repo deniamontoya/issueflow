@@ -29,7 +29,6 @@ final class TicketCatalog
                 priority: TicketPriority::High,
                 status: TicketStatus::InProgress
             ),
-        
             new Ticket(
                 id: 'INC-1003',
                 title: 'Actualizar datos',
@@ -43,7 +42,7 @@ final class TicketCatalog
                 status: TicketStatus::InProgress
             ),
             new Ticket(
-                id: 'INC-1005',
+                id: 'INC-4532',
                 title: 'Olvidé mi contraseña',
                 priority: TicketPriority::Low,
                 status: TicketStatus::Open
@@ -51,12 +50,13 @@ final class TicketCatalog
         ];
     }
 
-    /*metodo que devuelve el listado de todos los tickets*/
-    public function getAllTickets(): array
+    /* Método que devuelva el listado de todos los tickets */
+    public function getTickets(): array
     {
         return $this->tickets;
     }
-        /* Metodo find que encuentra un ticket en el listado, dado su id 
+
+    /* Metodo find que encuentra un ticket en el listado, dado su id 
     ?Ticket quiere decir que el método puede devolver o un Ticket o null
     */
     public function find(string $id): ?Ticket
@@ -69,5 +69,4 @@ final class TicketCatalog
             fn (Ticket $ticket): bool => $ticket->getId() === $id
         );
     }
-        
 }
