@@ -65,57 +65,16 @@ final class Ticket
         return $this->status;
     }
 
-    /* Mock data de tickets: Data simulada de prueba. La data real
-    se obtendrá luego de una petición a la base de datos. 
-    La data se generará con un método estático que devuelva un array de tickets.
-    */
-    public static function getAllTickets(): array
+    /* Método que devuelve true si el ticket tiene una
+    prioridad 'urgent', y false en caso contrario */
+    public function isUrgent(): bool
     {
-        return [
-            new Ticket(
-                id: 'INC-1001',
-                title: 'No puedo acceder',
-                priority: TicketPriority::Urgent,
-                status: TicketStatus::Open
-            ),
-            new Ticket(
-                id: 'INC-1002',
-                title: 'Error en factura',
-                priority: TicketPriority::High,
-                status: TicketStatus::InProgress
-            ),
-            new Ticket(
-                id: 'INC-1003',
-                title: 'Actualizar datos',
-                priority: TicketPriority::Normal,
-                status: TicketStatus::Closed
-            ),
-            new Ticket(
-                id: 'INC-1004',
-                title: 'El ordenador está en llamas',
-                priority: TicketPriority::Urgent,
-                status: TicketStatus::InProgress
-            ),
-            new Ticket(
-                id: 'INC-1005',
-                title: 'Olvide mi contraseña',
-                priority: TicketPriority::Low,
-                status: TicketStatus::Open
-            ),
-        ];
+        return $this->priority->isUrgent();
     }
 
-    /* Metodo find que encuentra un ticket en el listado, dado su id 
-    ?Ticket quiere decir que el método puede devolver o un Ticket o null
-    */
-    public static function find(string $id): ?Ticket
+    /* Método que devuelve true si una incidencia está cerrada */
+    public function isClosed(): bool
     {
-        /* array_find(), disponible en PHP 8.4+ devuelve el primer elemento
-        del array que cumple con la condición indicada por la función callback.
-        Si no encuentra ningún elemento que cumpla la condición devuelve null */
-        return array_find(
-            Ticket::getAllTickets(),
-            fn (Ticket $ticket): bool => $ticket->getId() === $id
-        );
+        return $this->status->isClosed();
     }
 }
