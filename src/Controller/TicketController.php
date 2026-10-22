@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Service\TicketCatalog;
+
+use App\Contract\TicketCatalogInterface;
 use App\Service\TicketSlaCalculator;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\Response;
@@ -17,7 +18,7 @@ final class TicketController extends AbstractController
     Inyecto el servicio TicketCatalog
     */
     public function __construct(
-        private readonly TicketCatalog $ticketCatalog,
+       private readonly TicketCatalogInterface $ticketCatalog, 
        private readonly TicketSlaCalculator $ticketSlaCalculator,
     )
     {}
@@ -46,7 +47,7 @@ final class TicketController extends AbstractController
     {
         /* Buscamos el ticket en el listado de tickets, puede suceder
         que el ticket solicitado no exista */
-        $ticket = $this->ticketCatalog->find($id);
+        $ticket = $this->ticketCatalog->find($id); 
 
         /* Si $ticket es NULL la incidencia no existe */
         if ($ticket === NULL) {
