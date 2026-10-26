@@ -15,12 +15,11 @@ final class TicketSlaCalculator implements TicketSlaCalculatorInterface
     public function getResponseTargetHours(Ticket $ticket): int
     {
         /* Implementación de la lógica del negocio */
-
         return match ($ticket->getPriority()) {
             TicketPriority::Urgent => 4,
             TicketPriority::High => 8,
             TicketPriority::Normal => 24,
-            TicketPriority::Low => 72,
+            TicketPriority::Low => 72
         };
     }
 }
