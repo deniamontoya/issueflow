@@ -1,0 +1,110 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Entity;
+
+use App\Model\TicketPriority;
+use App\Model\TicketStatus;
+use Doctrine\DBAL\Types\Types;
+use Doctrine\ORM\Mapping as ORM;
+use InvalidArgumentException;
+
+/** 
+ * Entity Doctrine de una  una incidencia en IssueFlow 
+ * Sigue siendo un objeto PHP pero le añadiremos
+ * el mapeo necesario para que Doctrine sepa cómo
+ * persistirlo en la base de datos
+ */
+#[ORM\Entity] // Decimos que la clase es también una entidad Doctrine
+#[ORM\Table(name: 'tickets')] // Asignamos la tabla correspondiente en la base de datos
+final class Ticket
+{
+/**
+     * Identificador técnico (id) de base de datos.
+     * Comienza con un valor null porque una entidad recién
+     * creada aún no ha sido insertada.
+     * El valor de id será asignado al momento de persistirla
+     */
+    #[ORM\Id] // Indica que corresponde a la clave primaria (PK: Primary key)
+    #[ORM\GeneratedValue] // Indica que es un valor autogenerado
+    #[ORM\Column(type: Types::BIGINT, options: ['unsigned' => true])] // si no especifico nombre de la columna, ella 
+    private ?int $id = null;
+
+   /*
+     * Constructor Property Promotion (PHP moderno)
+     */
+    public function __construct(
+        #[ORM\Column(length: 8, unique: true)]
+        private readonly string $code, // readonly: solo lectura, una vez creado no puedo cambiar el valor de $code
+
+        #[ORM\Column(length: 180)]
+        private string $title,
+
+        #[ORM\Column(length: 20, enumType: TicketPriority::class)]
+        private TicketPriority $priority,
+
+        #[ORM\Column(length: 20, enumType: TicketStatus::class)]
+        private TicketStatus $status
+    )
+    {
+        /*  Validar el formato de code: INC- seguido de cuatro dígitos
+            Para ello usamos una regex: regular expression (expresión regular): '/^INC-\d{4}$/'
+            La función preg_match() compara una cadena de texto con la regex y devuelve 1
+            si la cadena de texto es válida
+        */
+            if(preg_match('/^INC-\d{4}$/', $this->code) !== 1) {
+            throw new InvalidArgumentException('El codigo no tiene un formato válido');
+        }
+
+        /* Normalizacion de title: Eliminar espacios en blanco antes y despues
+        la funcion trim() elimina estos espacios
+        */
+        $normalizedTitle = trim($title);
+
+        /*  verifico quev$normalizedTitle no sea una cadena de texto vacia */
+        if ($normalizedTitle === '') {
+            throw new \InvalidArgumentException('El título no puede estar vacío');
+    }
+             
+    $this->title = $normalizedTitle;
+    }
+
+    /* Creamos los getters para cada uno de los atributos */
+    public function getId(): ?int
+    {
+            return $this->id;
+    }
+    public function getCode(): string
+    {
+         return $this->code;
+    }
+
+    public function getTitle(): string
+    {
+        return $this->title;
+    }
+
+    public function getPriority(): TicketPriority
+    {
+        return $this->priority;
+    }
+
+    public function getStatus(): TicketStatus
+    {
+        return $this->status;
+    }
+
+    /* Método que devuelve true si el ticket tiene una
+    prioridad 'urgent', y false en caso contrario */
+    public function isUrgent(): bool
+    {
+        return $this->priority->isUrgent();
+    }
+
+    /* Método que devuelve true si una incidencia está cerrada */
+    public function isClosed(): bool
+    {
+        return $this->status->isClosed();
+    }
+}
