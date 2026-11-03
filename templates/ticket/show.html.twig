@@ -12,6 +12,28 @@
     <h1>{{ ticket.title }}</h1>
     <p>Prioridad: <strong>{{ ticket.priority.label }}</strong></p>
     <p>Estado: <strong>{{ ticket.status.label }}</strong></p>
+     <p>
+            Categoria:
+            {# Antes de intentar acceder al name de category;, tengo qur verificar
+           que category no sea nulo (si no esta verificacion puede ocurrir un error)
+            #} 
+            {% if ticket.category %}
+                {{ ticket.category.name }}
+            {% else %}
+                Sin categoría
+            {% endif %}
+        </p>
+        <p>
+            Asignado a:
+           {# Antes de intentar acceder al name de assignee, tengo qur verificar
+           que assignee no sea nulo (si no esta verificacion puede ocurrir un error)
+            #} 
+            {% if ticket.assignee %}
+               {{ ticket.assignee.name }} 
+            {% else %}
+               Sin asignar
+            {% endif %}
+        </p>
     {# Agregamos el tiempo de respuesta #}
     <p>Objetivo de respuesta: <strong>{{ responseTargetHours }} horas</strong></p>
      {#
