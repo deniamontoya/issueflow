@@ -10,7 +10,7 @@ Use App\Entity\Ticket;
 Use App\Model\TicketPriority;
 Use App\Model\TicketStatus;
 use Symfony\Component\Validator\Constraints as Assert;
-
+use Symfony\Bridge\Doctrine\Validator\Constraints\UniqueEntity;
 /**
  * Datos de entrada para crear una incidencia desde un formulario.
  * Su responsabilidad es recibir los datos que Symfony Form transforma desde la
@@ -21,6 +21,16 @@ use Symfony\Component\Validator\Constraints as Assert;
  * los valores por defecto de los atributos correspondan a los valores iniciales
  * del formulario
  */
+
+/**
+ * Validador de Doctrine que verifica que el código no esté en uso
+ */
+#[UniqueEntity(
+    fields: ['code'], // Que campo del registro debe ser único
+    entityClass: Ticket::class, // Que entidad tengo que validar
+    message: 'Ya existe una incidencia con este código',
+    errorPath: 'code'
+)]
 final class TicketCreateData
 {
     #[Assert\NotBlank(
