@@ -29,17 +29,28 @@ final class TicketController extends AbstractController
         private readonly EntityManagerInterface $entityManager
     )
     {}
-
    /* Crear la ruta /tickets que muestra el listado de todos los tickets
     Por convención se identifica con index a la ruta que muestra un listado
     del recurso (en este caso tickets)
     */
     #[Route('/tickets', name: 'app_ticket_index', methods: ['GET'])]
-    public function index(): Response
-    {
+    public function index(Request $request): Response
+        {
+    /**
+     * Leo el valor de 'last_ticket_code' almacenado en la sesión.
+     * Asumimos en principio que no hay sesión activa y el valor es nulo
+     */
+    $lastTicketCode = null;
+
+    // Verifico si hay una sesión activa
+    if ($request->hasPreviousSession()) {
+        // Sólo si hay una sesión activa intento recuperar el valor
+        $lastTicketCode = $request->getSession()->get('last_ticket_code');
+    }
         return $this->render('ticket/index.html.twig', [
             'tickets' => $this->ticketCatalog->getTickets(),
-            'title' => 'Incidencias'
+            'title' => 'Incidencias',
+            'lastTicketCode' => $lastTicketCode
         ]);
     }
     /**
@@ -91,6 +102,17 @@ final class TicketController extends AbstractController
         $this->entityManager->persist($ticket);
         $this->entityManager->flush();
 
+        /**
+        * Un Flash Message vive en la sesión y está pensado para consumirse
+        * una sola vez. Es ideal para confirmar una operación después de una
+        * redirección
+        */
+        $this->addFlash(
+        'success',
+        sprintf('Incidencia %s creada correctamente.', $ticket->getCode())
+        );
+
+
         // luego de persistir el ticket en la BD, redirigimos a la pagina de detalle (show)
         return $this->redirectToRoute(
             'app_ticket_show', ['code' => $ticket->getCode()]
@@ -117,7 +139,7 @@ final class TicketController extends AbstractController
     en particular (en este caso un ticket)
     */
     #[Route('/tickets/{code}', name: 'app_ticket_show', methods: ['GET'])]
-    public function show(string $code): Response
+    public function show(string $code, Request $request): Response
     {
         /* Buscamos el ticket en el listado de tickets, puede suceder
         que el ticket solicitado no exista */
@@ -133,6 +155,12 @@ final class TicketController extends AbstractController
 
             throw $this->createNotFoundException('No existe la incidencia');
         }
+      /**
+ * Guardo en la sesión el código del último ticket visitado
+ * getSession() me devuelve el objeto sesión, con los datos de la sesión actual
+ * set() me permite guardar dato en la sesión en la forma clave => valor
+ */
+$request->getSession()->set('last_ticket_code', $ticket->getCode());
 
         /* Si $ticket no es NULL, envío a la plantilla la información
         de la incidencia */
