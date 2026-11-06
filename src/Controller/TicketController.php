@@ -14,6 +14,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 final class TicketController extends AbstractController
 {
@@ -29,107 +30,113 @@ final class TicketController extends AbstractController
         private readonly EntityManagerInterface $entityManager
     )
     {}
+
    /* Crear la ruta /tickets que muestra el listado de todos los tickets
     Por convención se identifica con index a la ruta que muestra un listado
     del recurso (en este caso tickets)
     */
     #[Route('/tickets', name: 'app_ticket_index', methods: ['GET'])]
     public function index(Request $request): Response
-        {
-    /**
-     * Leo el valor de 'last_ticket_code' almacenado en la sesión.
-     * Asumimos en principio que no hay sesión activa y el valor es nulo
-     */
-    $lastTicketCode = null;
+    {
+        /**
+         * Leo el valor de 'last_ticket_code' almacenado en la sesión.
+         * Asumimos en principio que no hay sesión activa y el valor es null
+         */
+        $lastTicketCode = null;
 
-    // Verifico si hay una sesión activa
-    if ($request->hasPreviousSession()) {
-        // Sólo si hay una sesión activa intento recuperar el valor
-        $lastTicketCode = $request->getSession()->get('last_ticket_code');
-    }
+        // Verifico si hay una sesión activa
+        if ($request->hasPreviousSession()) {
+            // Sólo si hay una sesión activa intento recuperar el valor
+            $lastTicketCode = $request->getSession()->get('last_ticket_code');
+        }
+
         return $this->render('ticket/index.html.twig', [
             'tickets' => $this->ticketCatalog->getTickets(),
             'title' => 'Incidencias',
             'lastTicketCode' => $lastTicketCode
         ]);
     }
+
     /**
-     * GET: el usuario navega a la ruta, debo mostrarle la paigina con el formulario
-     * POST: el usuario envía el formulario, si esta correcto le muentro nuevamente
-     * el formulario con los mensajes de errores correspondientes, si esta correcto 
-     * se hace una redirección a la página del ticket recien creado(ruta show)
+     * GET: el usuario navega a la ruta, debo mostrarle la página del formulario
+     * POST: el usuario envía el formulario, si está incorrecto le muestro nuevamente
+     * el formulario con los mensajes de errores correspondientes, si está correcto
+     * se hace una redirección a la página del ticket recién creado (ruta show)
      */
     #[Route('/tickets/new', name: 'app_ticket_new', methods: ['GET', 'POST'])]
+    // IsGranted solo permite acceso a la ruta a los usuarios que tengan el rol indicado
+    #[IsGranted(
+        'ROLE_AGENT',
+        message: 'Necesitas permisos de agente para crear incidencias.'
+    )]
     public function new(Request $request): Response
     {
-       // Crear un objeto TicketCreateData (DTO) para recibir la informacion del formulario
-       $data = new TicketCreateData();
-       
-       /**
-        * Crear un objeto form con el método createForm() heredado de AbstractController
-       * 1er parámetro corresponde a la clase que define el formulario
-       * 2do parámetro corresponde al DTO que recibe la información del formulario
-       */
-       $form = $this->createForm(TicketType::class, $data);
+        // Crear un objeto TicketCreateData (DTO) para recibir la información del formulario
+        $data = new TicketCreateData();
 
-       /**
-        * metodo handleRequest() hace el siguente:
-       *1- Detecta si el formulario ya ha sido enviado 
-        *2- Extrae los datos correspondientes del Resquest
-        *3- Transforma los valores  al tipo esperado
-        *4- Asigna los datos al DTO (TicketCreateData)
-        */
+        /**
+         * Crear un objeto form con el método createForm() heredado de AbstractController
+         * 1er parámetro corresponde a la clase que define el formulario
+         * 2do parámetro corresponde al DTO que recibe la información del formulario
+         */
+        $form = $this->createForm(TicketType::class, $data);
+
+        /**
+         * El método handleRequest() hace lo siguiente:
+         * 1- Detecta si el formulario ya ha sido enviado
+         * 2- Extrae los datos correspondientes del Request
+         * 3- Transforma los valores al tipo esperado
+         * 4- Aisgna los datos al DTO (TicketCreateData)
+         */
         $form->handleRequest($request);
 
         /**
-         * Chequeo si el estado del formulario es enviado y adfemas si el formulario 
-         * es valido, en ese caso el formulario crea con exito la incidencia en la 
-         * base de datos, y hago unaredirección a la página del ticket recien creado
-         * isSubmitted() devuelve true si el estado del formulario es valido
-         * isValid() devuelve true si el formulario es valido,
-         * pasa las validaciones establecidas en el DTO 
+         * Chequear si el estado del formulario es enviado y además si el formulario
+         * es válido, en ese caso el formulario crea con éxito la incidencia en la
+         * base de datos, y hago una redirección a la página del ticket recién creado.
+         * isSubmitted() devuelve true si el estado del formulario es enviado
+         * isValid() devuelve true si el formulario es válido, esto es, el formulario
+         * pasa las validaciones establecidas en el DTO
          */
         if ($form->isSubmitted() && $form->isValid()) {
-            // Creo la instancia ticket a partir del DTO (TicketCreateData)
+            // Creo la instancia Ticket a partir del DTO $data (TicketCreateData)
             $ticket = $data->mapToTicket();
 
-       /**
-        * Uso un EntityManager para persistir el ticket en la base de datos.
-        * El EntityManager puede persistir entidades que ya han sido mapeadas.
-        * persist() agrega a la unidad de trabajo la instrucción pero no la ejecuta
-        * flush() ejecuta todas las instrucciones pendientes en la unidad de trabajo
-        */
-        $this->entityManager->persist($ticket);
-        $this->entityManager->flush();
+            /**
+             * Uso un EntityManager para persistir el ticket en la base de datos.
+             * El EntityManager puede persistir entidades que ya han sido mapeadas.
+             * persist() agrega a la unidad de trabajo la instrucción pero no la ejecuta
+             * flush() ejecuta (consume) todas las instrucciones de la unidad de trabajo
+             */
+            $this->entityManager->persist($ticket);
+            $this->entityManager->flush();
 
+            /**
+             * Un Flash Message vive en la sesión y está pensado para consumirse
+             * una sola vez. Es ideal para confirmar una operación después de una
+             * redirección
+             */
+            $this->addFlash(
+                'success',
+                sprintf('Incidencia %s creada correctamente.', $ticket->getCode())
+            );
+
+            // Luego de persistir el ticket en la BD, redirigimos a la página de detalle (show)
+            return $this->redirectToRoute(
+                'app_ticket_show', ['code' => $ticket->getCode()]
+            );
+        }
         /**
-        * Un Flash Message vive en la sesión y está pensado para consumirse
-        * una sola vez. Es ideal para confirmar una operación después de una
-        * redirección
-        */
-        $this->addFlash(
-        'success',
-        sprintf('Incidencia %s creada correctamente.', $ticket->getCode())
-        );
-
-
-        // luego de persistir el ticket en la BD, redirigimos a la pagina de detalle (show)
-        return $this->redirectToRoute(
-            'app_ticket_show', ['code' => $ticket->getCode()]
-        );
-      }
-      /**
-       *  Aqui tenemos dos casos 
-       * 1- El formulario no fue enviado ->  muestro el formulario al cliente
-       * 2- El formulario fue enviado pero no es valido -> muestro el formulario al cliente
-       * 2- El formulario fue enviado pero no es válido -> muestro el formulario al cliente
-       * pero con los errores de validación
-       * En ambos casos devuelvo la plantilla. El objeto $form tiene la información
-       * de los errores si los hay, y la plantilla los mostrará o no según sea el caso
-       */
-       return $this->render('ticket/new.html.twig', [
-       'form' => $form,
-       ]);
+         * Aquí tenemos dos casos:
+         * 1- El formulario no fue enviado -> muestro el formulario al cliente
+         * 2- El formulario fue enviado pero no es válido -> muestro el formulario al cliente
+         * pero con los errores de validación
+         * En ambos casos devuelvo la plantilla, el objeto $form tiene la información
+         * de los errores si los hay, y la plantilla los mostrará o no según sea el caso
+         */
+        return $this->render('ticket/new.html.twig', [
+            'form' => $form,
+        ]);
     }
 
     /* Ruta dinámica que muestra la información de un ticket en particular 
@@ -143,7 +150,7 @@ final class TicketController extends AbstractController
     {
         /* Buscamos el ticket en el listado de tickets, puede suceder
         que el ticket solicitado no exista */
-        $ticket = $this->ticketCatalog->findBycode($code);
+        $ticket = $this->ticketCatalog->findByCode($code);
 
         /* Si $ticket es NULL la incidencia no existe */
         if ($ticket === NULL) {
@@ -155,12 +162,12 @@ final class TicketController extends AbstractController
 
             throw $this->createNotFoundException('No existe la incidencia');
         }
-      /**
- * Guardo en la sesión el código del último ticket visitado
- * getSession() me devuelve el objeto sesión, con los datos de la sesión actual
- * set() me permite guardar dato en la sesión en la forma clave => valor
- */
-$request->getSession()->set('last_ticket_code', $ticket->getCode());
+        /**
+         * Guardo en la sesión el código del último ticket visitado
+         * getSession() me devuelve el objeto sesión, con los datos de la sesión actual
+         * set() me permite guardar data en la sesión en la forma clave => valor
+         */
+        $request->getSession()->set('last_ticket_code', $ticket->getCode());
 
         /* Si $ticket no es NULL, envío a la plantilla la información
         de la incidencia */

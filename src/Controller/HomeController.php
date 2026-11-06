@@ -21,6 +21,8 @@ use Symfony\Component\HttpFoundation\Response;
 */
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 
+use Symfony\Component\Security\Http\Attribute\IsGranted;
+
 /* Creamos la clase correspondiente a nuestro controlador
 Tiene el mismo nombre que el archivo en src/Controller
 Usamos el modificador final para que nadie herede de ella */
@@ -46,8 +48,8 @@ final class HomeController extends AbstractController
     Este método devuelve (return) un objeto de la clase Response de Symfony.
     */
     public function index(): Response
-    {      
-         /* Retorna un objeto Response a través del metodo render().
+    {
+        /* Retorna un objeto Response a través del metodo render().
         Argumentos de render():
         1- Plantilla a la que le envío la información.
         2- Un array asociativo que contiene los datos. En ese array las claves
@@ -58,12 +60,16 @@ final class HomeController extends AbstractController
         ]);
     }
 
- /* Agregamos una nueva ruta, para el URL /health 
+    /* Agregamos una nueva ruta, para el URL /health 
     En este caso le enviamos al cliente un mensaje en texto plano en el
     cuerpo de la respuesta. Hay que agregar la cabecera 'Content-Type'
     con la indicación que es texto plano lo que va en el cuerpo: text/plain.
     */
     #[Route('/health', name: 'app_health', methods: ['GET'])]
+    #[IsGranted(
+        'ROLE_DEV',
+        message: 'Necesitas permisos de desarrollador para ver el diagnóstico de la app.'
+    )]
     public function health(): Response
     {
         return new Response(
@@ -73,14 +79,14 @@ final class HomeController extends AbstractController
         );
     }
 
-      /* Crear una ruta /saludo donde su método devuelva como respuesta
+    /* Crear una ruta /saludo donde su método devuelva como respuesta
     en el cuerpo un documento  html que tenga una etiqueta <h1> con un
     pequeño saludo de prueba (Esto es un ejercicio de prueba, no estará en la app
     definitiva)
     #[Route('/saludo', name: 'app_saludo', methods: ['GET'])]
     public function saludo(): Response 
     {
-      $html = <<<HTML
+        $html = <<<HTML
             <!DOCTYPE html>
             <html lang="es">
             <head>
