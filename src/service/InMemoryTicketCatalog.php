@@ -9,12 +9,10 @@ use App\Entity\Ticket;
 use App\Model\TicketPriority;
 use App\Model\TicketStatus;
 
-
 /* Catálogo temporal de incidencias en memoria 
     Implementa la interfaz TicketCatalogInterface
 */
-
-final class InMemoryTicketCatalog implements TicketCatalogInterface
+final class InMemoryTicketCatalog //implements TicketCatalogInterface
 {
     // Atributo que almacena el listado de las incidencias
     private array $tickets;
@@ -61,10 +59,10 @@ final class InMemoryTicketCatalog implements TicketCatalogInterface
         return $this->tickets;
     }
 
-    /* Metodo find que encuentra un ticket en el listado, dado su codigo
+    /* Metodo find que encuentra un ticket en el listado, dado su code 
     ?Ticket quiere decir que el método puede devolver o un Ticket o null
     */
-    public function findBycode(string $code): ?Ticket
+    public function findByCode(string $code): ?Ticket
     {
         /* array_find(), disponible en PHP 8.4+ devuelve el primer elemento
         del array que cumple con la condición indicada por la función callback.
