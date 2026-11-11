@@ -26,9 +26,9 @@
         {{ form_row(filterForm.priority) }}
        {{ form_row(filterForm.status) }}
        {{ form_row(filterForm.category) }}
-
+       {{ form_row(filterForm.assignee) }}
    <div class="filter-actions">
-   
+
     {{ form_widget(filterForm.filter) }}
  
     <a class="button button-outline" href="{{ path('app_ticket_index') }}">

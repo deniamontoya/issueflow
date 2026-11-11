@@ -64,10 +64,24 @@ final class TicketController extends AbstractController
         $filterForm->handleRequest($request);
 
         // Extraer de la URL el número de página solicitada como un número entero
-       $page = $request->query->getInt('page');
+       $pageParam = $request->query->get('page', '1');
+       $page = filter_var($pageParam, FILTER_VALIDATE_INT);
 
+       if ($page === false || $page < 1) {
+       $page = 1;
+        }
          // Pido la página al repositorio, establezco un tamaño de página
-         $ticketPage = $this->ticketCatalog->search($criteria, $page, 3);
+         $pageSize = 3;
+$ticketPage = $this->ticketCatalog->search($criteria, $page, $pageSize);
+
+$totalPages = max(1, (int) ceil($ticketPage->getTotalCount() / $pageSize));
+
+if ($page > $totalPages) {
+    $query = $request->query->all();
+    $query['page'] = $totalPages;
+
+    return $this->redirectToRoute('app_ticket_index', $query);
+}
 
         return $this->render('ticket/index.html.twig', [
             'title' => 'Incidencias',

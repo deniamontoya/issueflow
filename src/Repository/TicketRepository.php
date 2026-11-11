@@ -115,6 +115,12 @@ final class TicketRepository extends ServiceEntityRepository implements TicketCa
                 ->andWhere('ticket.category = :category')
                 ->setParameter('category', $criteria->category);
         }
+        // Aplicamos filtro por usuario asignado si no es null
+       if ($criteria->assignee !== null) {
+        $queryBuilder
+        ->andWhere('ticket.assignee = :assignee')
+        ->setParameter('assignee', $criteria->assignee);
+       }
 
         // Primero me aseguro que el número de página nunca pueda ser menor que 1
         // La función max() devuelve el mayor de los argumentos
