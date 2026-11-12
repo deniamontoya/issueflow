@@ -19,7 +19,9 @@ use Psr\Log\LoggerInterface;
 use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 final class TicketController extends AbstractController
-{
+{ 
+    private const PAGE_SIZE = 3;
+
     /* Constructor de TicketController 
     Cuando symfony levanta la aplicación, crea una instancia del controlador.
     Inyecto el servicio TicketCatalog
@@ -72,7 +74,7 @@ final class TicketController extends AbstractController
         }
          // Pido la página al repositorio, establezco un tamaño de página
          $pageSize = 3;
-$ticketPage = $this->ticketCatalog->search($criteria, $page, $pageSize);
+$ticketPage = $this->ticketCatalog->search($criteria, $page, self::PAGE_SIZE);
 
 $totalPages = max(1, (int) ceil($ticketPage->getTotalCount() / $pageSize));
 
@@ -88,6 +90,7 @@ if ($page > $totalPages) {
             'lastTicketCode' => $lastTicketCode,
             'filterForm' => $filterForm,
             'ticketPage' => $ticketPage,
+            self::PAGE_SIZE
         ]);
         
     }
