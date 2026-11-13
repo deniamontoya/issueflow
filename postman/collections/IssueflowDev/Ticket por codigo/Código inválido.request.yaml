@@ -1,0 +1,4 @@
+$kind: http-request
+url: localhost:8000/api/tickets/INVALIDO
+method: GET
+order: 4000

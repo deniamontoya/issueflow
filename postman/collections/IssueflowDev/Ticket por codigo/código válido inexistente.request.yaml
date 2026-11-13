@@ -1,0 +1,4 @@
+$kind: http-request
+url: localhost:8000/api/tickets/INC-6868
+method: GET
+order: 3000

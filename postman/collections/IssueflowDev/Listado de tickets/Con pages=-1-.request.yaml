@@ -1,0 +1,7 @@
+$kind: http-request
+name: Con pages=-1.
+url: localhost:8000/api/tickets?pages=-1
+method: GET
+queryParams:
+  pages: "-1"
+order: 2000
