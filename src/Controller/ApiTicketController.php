@@ -126,13 +126,52 @@ final class ApiTicketController extends AbstractController
         ]);
     }
 
-    private function ticketToArray(Ticket $ticket): array
-    {
-        return [
-            'code' => $ticket->getCode(),
-            'title' => $ticket->getTitle(),
-            'priority' => $ticket->getPriority()->value,
-            'status' => $ticket->getStatus()->value,
-        ];
-    }
+     #[Route('/api/tickets/{code}', name: 'app_api_ticket_show', methods: ['GET'])]
+     public function show(string $code): JsonResponse
+     {
+    // En API diferenciamos un formato inválido (400) de un formato válido pero inexistente (404)
+
+    // Verificamos que el formato sea válido
+    if (preg_match('/^INC-\d{4}$/', $code) !== 1) {
+    return $this->json(
+        [
+            'error' => [
+                'code' => 'invalid_ticket_code',
+                'message' => 'El código debe tener el formato INC-0000'
+            ]
+        ],
+        Response::HTTP_BAD_REQUEST,
+    );
+}
+
+    // Si el código tiene un formato válido, buscamos el ticket en la base de datos
+     $ticket = $this->ticketCatalog->findByCode($code);
+
+     // Si el ticket no existe, devolvemos un error
+     if ($ticket === null) {
+    return $this->json(
+        [
+            'error' => [
+                'code' => 'ticket_not_found',
+                'message' => 'No se ha encontrado el ticket.',
+            ],
+        ],
+        Response::HTTP_NOT_FOUND,
+    );
+}
+
+     return $this->json([
+    'ticket' => $this->ticketToArray($ticket),
+]);
+
+      }
+private function ticketToArray(Ticket $ticket): array
+{
+    return [
+        'code' => $ticket->getCode(),
+        'title' => $ticket->getTitle(),
+        'priority' => $ticket->getPriority()->value,
+        'status' => $ticket->getStatus()->value,
+    ];
+}
 }
