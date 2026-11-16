@@ -1,0 +1,12 @@
+$kind: http-request
+url: localhost:8000/api/tickets/INC-1001
+method: PATCH
+body:
+  type: json
+  content: |-
+    {
+      "title": "No puedo iniciar sesión",
+      "priority": "urgent",
+      "status": "in_progress"
+    }
+order: 1000

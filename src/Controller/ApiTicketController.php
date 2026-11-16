@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Api\Model\TicketCreatePayload;
+use App\Api\Model\TicketUpdatePayload;
 use App\Form\Model\TicketSearchCriteria;
 use App\Model\TicketPriority;
 use App\Model\TicketStatus;
@@ -18,6 +19,8 @@ use App\Entity\Ticket;
 use App\Service\TicketPaginator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpKernel\Attribute\MapRequestPayload;
+use Symfony\Component\Validator\Validator\ValidatorInterface;
+use JsonException;
 
 final class ApiTicketController extends AbstractController
 {
@@ -26,6 +29,92 @@ final class ApiTicketController extends AbstractController
         private readonly TicketPaginator $ticketPaginator,
         private readonly EntityManagerInterface $entityManager,
     ) {}
+
+    #[Route('/api/tickets/{code}', name: 'app_api_ticket_update', methods: ['PATCH'])]
+    public function update(string $code, Request $request, ValidatorInterface $validator): JsonResponse
+    {
+        if (preg_match('/^INC-\d{4}$/', $code) !== 1) {
+            return $this->json(
+                ['error' => ['code' => 'invalid_ticket_code', 'message' => 'El código debe tener el formato INC-0000']],
+                Response::HTTP_BAD_REQUEST,
+            );
+        }
+
+        $ticket = $this->ticketCatalog->findByCode($code);
+        if ($ticket === null) {
+            return $this->json(
+                ['error' => ['code' => 'ticket_not_found', 'message' => 'La incidencia solicitada no existe']],
+                Response::HTTP_NOT_FOUND,
+            );
+        }
+
+        try {
+            $decoded = json_decode($request->getContent(), false, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException) {
+            return $this->json(
+                ['error' => ['code' => 'invalid_json', 'message' => 'El cuerpo JSON no es válido']],
+                Response::HTTP_BAD_REQUEST,
+            );
+        }
+
+        if (!$decoded instanceof \stdClass) {
+            return $this->json(
+                ['error' => ['code' => 'invalid_json', 'message' => 'El cuerpo debe ser un objeto JSON']],
+                Response::HTTP_BAD_REQUEST,
+            );
+        }
+
+        $payload = new TicketUpdatePayload(get_object_vars($decoded));
+        $violations = $validator->validate($payload);
+        if (count($violations) > 0) {
+            return $this->json([
+                'error' => [
+                    'code' => 'invalid_ticket_update',
+                    'message' => $violations[0]->getMessage(),
+                ],
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $values = $payload->values;
+        if (array_key_exists('title', $values)) {
+            $ticket->updateTitle($values['title']);
+        }
+        if (array_key_exists('priority', $values)) {
+            $ticket->updatePriority(TicketPriority::from($values['priority']));
+        }
+        if (array_key_exists('status', $values)) {
+            $ticket->updateStatus(TicketStatus::from($values['status']));
+        }
+
+        $this->entityManager->flush();
+
+        return $this->json(['ticket' => $this->ticketToArray($ticket)]);
+    }
+
+    #[Route('/api/tickets/{code}', name: 'app_api_ticket_delete', methods: ['DELETE'])]
+    public function delete(string $code): Response
+    {
+        if (preg_match('/^INC-\d{4}$/', $code) !== 1) {
+            return $this->json(
+                ['error' => ['code' => 'invalid_ticket_code', 'message' => 'El código debe tener el formato INC-0000']],
+                Response::HTTP_BAD_REQUEST,
+            );
+        }
+
+        $ticket = $this->ticketCatalog->findByCode($code);
+        if ($ticket === null) {
+            return $this->json(
+                ['error' => ['code' => 'ticket_not_found', 'message' => 'La incidencia solicitada no existe']],
+                Response::HTTP_NOT_FOUND,
+            );
+        }
+
+        $this->entityManager->remove($ticket);
+        $this->entityManager->flush();
+
+        return new Response(status: Response::HTTP_NO_CONTENT);
+    }
+
     /**
      * Esta ruta devuelve un listado de las incidencias
      * Está petición se hace con el protocolo HTTP, aunque venga de una app móvil
