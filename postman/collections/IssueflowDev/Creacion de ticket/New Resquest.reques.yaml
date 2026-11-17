@@ -1,0 +1,13 @@
+$kind: http-request
+url: http://localhost:8000/api/tickets
+method: POST
+body:
+  type: json
+  content: |-
+    {
+        "code": "INC-1010",
+        "title": "Otra vez esta incidencia",
+        "priority": "high",
+        "status": "open"
+    }
+order: 1000
