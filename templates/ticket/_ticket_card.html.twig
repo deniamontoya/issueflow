@@ -10,10 +10,11 @@
         <p>Prioridad: <strong>{{ ticket.priority.label }}</strong></p>
         <p>Estado: <strong>{{ ticket.status.label }}</strong></p>
         <p>
-            Categoria:
-            {# Antes de intentar acceder al name de category;, tengo qur verificar
-           que category no sea nulo (si no esta verificacion puede ocurrir un error)
-            #} 
+            Categoría:
+            {# 
+                Antes de intentar acceder al name de category, tengo que verificar
+                que category no sea nulo (si no hago esta verificación puede ocurrir un error)
+            #}
             {% if ticket.category %}
                 {{ ticket.category.name }}
             {% else %}
@@ -22,13 +23,14 @@
         </p>
         <p>
             Asignado a:
-           {# Antes de intentar acceder al name de assignee, tengo qur verificar
-           que assignee no sea nulo (si no esta verificacion puede ocurrir un error)
-            #} 
+            {# 
+                Antes de intentar acceder al name de assignee, tengo que verificar
+                que assignee no sea nulo (si no hago esta verificación puede ocurrir un error)
+            #}
             {% if ticket.assignee %}
-               {{ ticket.assignee.name }} 
+                {{ ticket.assignee.name }}
             {% else %}
-               Sin asignar
+                Sin asignar
             {% endif %}
         </p>
         {# 
@@ -50,4 +52,26 @@
         {# Agregamos un enlace a la vista particular de este ticket #}
         <a href="{{ path('app_ticket_show', { code: ticket.code }) }}">Ver detalle</a>
     </div>
+    {% if is_granted('ROLE_AGENT') %}
+        <div class="ticket-actions">
+            <a 
+                class="button button-outline"
+                href="{{ path('app_ticket_edit', { code: ticket.code }) }}"
+            >
+                Editar
+            </a>
+
+            {# Botón con la información para eliminar un ticket #}
+            <button
+                type="button"
+                class="button button-danger-outline"
+                data-delete-ticket
+                date-delete-code="{{ ticket.code }}"
+                data-delete-title="{{ ticket.title }}"
+                data-delete-url="{{ path('app_ticket_delete', { code: ticket.code }) }}"
+            >
+                Eliminar
+            </button>
+        </div>
+    {% endif %}
 </article>

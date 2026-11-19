@@ -16,26 +16,36 @@
         #}
         {% if is_granted('ROLE_AGENT') %}
             <a href="{{ path('app_ticket_new') }}">Nueva incidencia</a>
-        {% endif %}  
-
-        <p class="counter">{{ ticketPage.getTotalCount() }} incidencias</p>
+        {% endif %}
+        {#
+            ticketPage será suministrado por el contralador, es un objeto WindowPage
+            getTotalCount() devuelve la cantidad de tickets totales
+        #}
+        <p class="counter">{{ ticketPage.getTotalCount() }} incidencias</p>  
     </div>
+    {#
+        Es un formulario o filtro GET, filtar no modifica el estado del servidor.
+        Sus valores quedan visibles y compartibles en la URL
+    #}
     <section class="filter-card">
-       {{ form_start(filterForm, { attr: { class: 'filter-form' } }) }}
-       {{ form_row(filterForm.query) }}
-        {{ form_row(filterForm.priority) }}
-       {{ form_row(filterForm.status) }}
-       {{ form_row(filterForm.category) }}
-       {{ form_row(filterForm.assignee) }}
-   <div class="filter-actions">
+        {# Inicio del formulario de filtrado #} 
+        {{ form_start(filterForm, { attr: { class: 'filter-form'} }) }}
+            {# Campos de entrada del formulario de filtrado #}
+            {{ form_row(filterForm.query) }}
+            {{ form_row(filterForm.priority) }}
+            {{ form_row(filterForm.status) }}
+            {{ form_row(filterForm.category) }}
+            {{ form_row(filterForm.assignee) }}
 
-    {{ form_widget(filterForm.filter) }}
- 
-    <a class="button button-outline" href="{{ path('app_ticket_index') }}">
-        Limpiar
-    </a>
-   </div>
-   {{  form_end(filterForm) }}
+            <div class="filter-actions">
+                {# Botón para aplicar los filtros #}
+                {{ form_widget(filterForm.filter) }}
+                {# Botón para limpiar el formulario refrescando la página del listado #}
+                <a class="button button-outline" href="{{ path('app_ticket_index') }}">
+                    Limpiar
+                </a>
+            </div>
+        {{ form_end(filterForm) }}
     </section>
 
     {#
@@ -50,8 +60,10 @@
     {% endif %}
     
     <div class="ticket-list">
-        {# Recorremos la colecccion de tickets de la pagina actual
-         #}
+        {# 
+            Recorremos la colección de tickets de la página actual 
+            El método getItems() devuelve el array de tickets de la página actual
+        #}
         {% for ticket in ticketPage.getItems() %}
             {#
                 Reutilizamos un fragmento de plantilla para cada tarjeta.
@@ -65,14 +77,54 @@
         {% endfor %}
     </div>
 
-    {# controles de navegacion del paginador #}
-    {%  if ticketPage.hasToPaginate() %}
-        {%  set params = app.request.query.all %}
+    {# Modal de confirmación de eliminación de incidencia #}
+    {% if is_granted('ROLE_AGENT') %}
+        <dialog
+            id="delete-ticket-modal"
+            class="confirm-dialog"
+        >
+            <h2 id="delete-ticket-modal-title">
+                Eliminar incidencia
+            </h2>
+            <p>¿Seguro que quieres eliminar <strong data-delete-ticket-code></strong></p>
+            <p data-delete-ticket-title></p>
+            <p>Esta acción no se puede deshacer</p>
 
-    {# Agrego un elemento nav de HTML #}
-    <nav class="pagination">
-    {# Mostramos el enlace a la página previa sólo si existe una página previa #}
-       {% if ticketPage.hasPreviousPage() %}
+            {# Inserto el formulario general de eliminacion #}
+            {{ form_start(deleteForm, { attr: { id: 'delete-ticket-form' } }) }}
+                <div class="modal-actions">
+                    <button
+                        type="button"
+                        class="button button-outline"
+                        data-modal-close
+                    >
+                        Cancelar
+                    </button>
+
+                    {{ form_widget(deleteForm.delete) }}
+                </div>
+            {{ form_end(deleteForm) }}
+        </dialog>
+    {% endif %}
+    
+
+    {# Controles de navegación del paginador #}
+    {#
+        El método hasToPaginate() verifica si es necesario paginar, esto es, si los
+        resultados no caben en una sola página 
+    #}
+    {% if ticketPage.hasToPaginate() %}
+        {# Guardo todos los parámetros actuales de la URL en una variable params #}
+        {% set params = app.request.query.all %}
+
+        {# Agrego un elemento nav de HTML #}
+        <nav class="pagination">
+            {#
+                Mostramos el enlace a la página previa sólo si existe una página previa
+                Navegamos (refrescamos) la página del listado de tickets, pero cambiamos
+                el valor de page por el valor de page - 1, que corresponde a la página anterior
+            #}
+            {% if ticketPage.hasPreviousPage() %}
                 <a
                     class="button button-outline" 
                     href="{{ path('app_ticket_index', params|merge({ page: ticketPage.getPageNumber() - 1 })) }}"
@@ -81,21 +133,22 @@
                 </a>
             {% endif %}
             <span>
-                pagina {{ ticketPage.getPageNumber() }} de {{ ticketPage.getPageCount() }}
+                Página {{ ticketPage.getPageNumber() }} de {{ ticketPage.getPageCount() }}
             </span>
-{#
-    Mostramos el enlace a la página siguiente sólo si existe una página siguiente
-    Navegamos (refrescamos) la página del listado de tickets, pero cambiamos
-    el valor de page por el valor de page + 1, que corresponde a la página siguiente
-#}
-{% if ticketPage.hasNextPage() %}
-    <a
-        class="button button-outline"
-        href="{{ path('app_ticket_index', params|merge({ page: ticketPage.getPageNumber() + 1 })) }}"
-    >
-        Siguiente →
-    </a>
-{% endif %}
-</nav>
-{% endif %}
+            {#
+                Mostramos el enlace a la página siguiente sólo si existe una página siguiente
+                Navegamos (refrescamos) la página del listado de tickets, pero cambiamos
+                el valor de page por el valor de page + 1, que corresponde a la página siguiente
+            #}
+            {% if ticketPage.hasNextPage() %}
+                <a
+                    class="button button-outline" 
+                    href="{{ path('app_ticket_index', params|merge({ page: ticketPage.getPageNumber() + 1 })) }}"
+                >
+                    Siguiente →
+                </a>
+            {% endif %}
+        </nav>
+    {% endif %}
+    
 {% endblock %}
